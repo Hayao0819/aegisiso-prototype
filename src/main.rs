@@ -34,11 +34,11 @@ async fn main() -> Result<(), ArchisoError> {
             }
             
             info!("Copying airootfs");
-            if let Err(e) = fs::copy_airootfs(&cfg.paths) {
+            if let Err(e) = fs::copy_airootfs(&cfg.paths).await {
                 error!("Failed to copy airootfs: {}", e);
                 return Err(e);
             }
-            if let Err(e) = fs::copy_grub_cfg(&cfg.paths) {
+            if let Err(e) = fs::copy_grub_cfg(&cfg.paths).await {
                 error!("Failed to copy grub.cfg: {}", e);
                 return Err(e);
             }
@@ -52,7 +52,7 @@ async fn main() -> Result<(), ArchisoError> {
             // Create SquashFS image
             info!("Creating SquashFS image");
             let rootfs = Path::new(&cfg.paths.work_dir).join("airootfs");
-            let sfs = Path::new(&cfg.paths.work_dir).join("airootfs.sfs");
+            let sfs = Path::new(&cfg.paths.isofs_dir()).join("airootfs.sfs");
             if let Err(e) = image::squash(&rootfs, &sfs).await {
                 error!("Failed to create SquashFS image: {}", e);
                 return Err(e);
@@ -61,7 +61,7 @@ async fn main() -> Result<(), ArchisoError> {
             info!("Creating ISO");
             let iso_path = Path::new(&cfg.paths.out_dir)
                 .join(format!("{}-{}.iso", &cfg.iso.name, &cfg.iso.version));
-            if let Err(e) = image::make_iso(Path::new(&cfg.paths.work_dir), &iso_path, &cfg.iso.name).await {
+            if let Err(e) = image::make_iso(Path::new(&cfg.paths.isofs_dir()), &iso_path, &cfg.iso.name).await {
                 error!("Failed to create ISO: {}", e);
                 return Err(e);
             }

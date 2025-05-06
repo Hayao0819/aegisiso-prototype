@@ -1,3 +1,5 @@
+use pgp::crypto::dsa;
+
 use crate::config::PathSection;
 use crate::error::ArchisoError;
 use std::path::Path;
@@ -8,13 +10,13 @@ pub fn prepare(paths: &PathSection) -> Result<(), ArchisoError> {
     Ok(())
 }
 
-pub fn copy_airootfs(paths: &PathSection) -> Result<(), ArchisoError> {
-    let src = Path::new(&paths.profile).join("airootfs");
-    let dst = Path::new(&paths.work_dir).join("airootfs");
+pub async fn copy_airootfs(paths: &PathSection) -> Result<(), ArchisoError> {
+    let src = paths.profile_airootfs_dir();
+    let dst = paths.work_airrootfs_dir();
 
     // remove any stale airootfs
-    if dst.exists() {
-        std::fs::remove_dir_all(&dst)?;
+    if dst.exists().await {
+        tokio::fs::remove_dir_all(&dst).await?;
     }
 
     println!(
@@ -88,17 +90,18 @@ pub fn copy_airootfs(paths: &PathSection) -> Result<(), ArchisoError> {
     Ok(())
 }
 
-pub fn copy_grub_cfg(paths: &PathSection) -> Result<(), ArchisoError> {
+pub async fn copy_grub_cfg(paths: &PathSection) -> Result<(), ArchisoError> {
     let src = Path::new(&paths.profile).join("grub");
-    let dst = Path::new(&paths.work_dir).join("boot/grub");
+    // let dst = Path::new(&paths.work_dir).join("boot/grub");
+    let dst = paths.isofs_dir().join("boot/grub");
 
     // remove any stale airootfs
-    if dst.exists() {
+    if dst.exists().await {
         std::fs::remove_dir_all(&dst)?;
     }
 
     println!(
-        "Copying airootfs from {} to {}",
+        "Copying Grub configs from {} to {}",
         src.display(),
         dst.display()
     );
@@ -160,7 +163,7 @@ pub fn copy_grub_cfg(paths: &PathSection) -> Result<(), ArchisoError> {
     }
 
     println!(
-        "Copied airootfs from {} to {}",
+        "Copied Grub configs from {} to {}",
         src.display(),
         dst.display()
     );

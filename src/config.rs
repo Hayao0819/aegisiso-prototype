@@ -1,4 +1,6 @@
 use crate::error::ArchisoError;
+use async_std::path::{Path, PathBuf};
+use clap::builder::Str;
 use serde::Deserialize;
 use std::fs;
 
@@ -28,6 +30,20 @@ pub struct PathSection {
     pub work_dir: String,
     pub out_dir: String,
     pub profile: String,
+}
+
+impl PathSection {
+    pub fn profile_airootfs_dir(&self) -> PathBuf {
+        Path::new(&self.profile).join("airootfs")
+    }
+
+    pub fn work_airrootfs_dir(&self) -> PathBuf {
+        Path::new(&self.work_dir).join("airootfs")
+    }
+
+    pub fn isofs_dir(&self) -> PathBuf {
+        Path::new(&self.work_dir).join("isofs")
+    }
 }
 
 #[derive(Deserialize, Debug)]
