@@ -1,4 +1,4 @@
-/target/
 .DS_Store
-work
-
+/target
+/work
+/out
