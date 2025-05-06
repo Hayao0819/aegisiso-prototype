@@ -6,6 +6,7 @@ mod image;
 mod pacman;
 mod sign;
 mod utils;
+mod command_check;
 
 use crate::cli::{BuildMode, Cli};
 use crate::config::Config;
@@ -19,6 +20,8 @@ use log::{debug, error, info, trace, warn};
 async fn main() -> Result<(), ArchisoError> {
     env_logger::init();
 
+    command_check::check_commands()?;
+
     let cli = Cli::parse();
     let cfg = Config::load(&cli.config)?;
 
@@ -29,6 +32,7 @@ async fn main() -> Result<(), ArchisoError> {
                 error!("Failed to prepare directories: {}", e);
                 return Err(e);
             }
+            
             info!("Copying airootfs");
             if let Err(e) = fs::copy_airootfs(&cfg.paths) {
                 error!("Failed to copy airootfs: {}", e);
