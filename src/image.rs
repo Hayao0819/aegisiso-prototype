@@ -1,39 +1,20 @@
 use crate::error::ArchisoError;
 use std::path::Path;
-use std::process::{Command, Stdio};
+use crate::utils::run_command;
 
 /// Create SquashFS image from root directory
-pub fn squash(root: &Path, out: &Path) -> Result<(), ArchisoError> {
-    let status = Command::new("mksquashfs")
-        .arg(root)
-        .arg(out)
-        .arg("-noappend")
-        .arg("-comp")
-        .arg("xz")
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .status()?;
-    if !status.success() {
-        return Err(ArchisoError::Process(format!(
-            "mksquashfs failed: {}",
-            status
-        )));
-    }
+pub async fn squash(root: &Path, out: &Path) -> Result<(), ArchisoError> {
+    run_command("mksquashfs", &[root.to_str().unwrap(), out.to_str().unwrap(), "-noappend", "-comp", "xz"]).await?;
     Ok(())
 }
 
 /// Create ISO from work directory
-pub fn make_iso(src: &Path, iso: &Path, volid: &str) -> Result<(), ArchisoError> {
-    let status = Command::new("xorriso")
-        .args(&["-as", "mkisofs", "-o"])
-        .arg(iso)
-        .args(&["-J", "-R", "-V", volid])
-        .arg(src)
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .status()?;
-    if !status.success() {
-        return Err(ArchisoError::Process(format!("xorriso failed: {}", status)));
-    }
+pub async fn make_iso(src: &Path, iso: &Path, volid: &str) -> Result<(), ArchisoError> {
+    run_command("xorriso", &[
+        "-as", "mkisofs", "-o",
+        iso.to_str().unwrap(),
+        "-J", "-R", "-V", volid,
+        src.to_str().unwrap()
+    ]).await?;
     Ok(())
 }

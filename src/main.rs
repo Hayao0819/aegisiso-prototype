@@ -6,6 +6,7 @@ mod image;
 mod pacman;
 mod sign;
 mod template;
+mod utils;
 
 use crate::cli::{BuildMode, Cli};
 use crate::config::Config;
@@ -34,12 +35,12 @@ async fn main() -> Result<(), ArchisoError> {
             // Create SquashFS image
             let rootfs = Path::new(&cfg.paths.work_dir).join("airootfs");
             let sfs = Path::new(&cfg.paths.work_dir).join("airootfs.sfs");
-            image::squash(&rootfs, &sfs)?;
+            image::squash(&rootfs, &sfs).await?;
 
             // // Create ISO
             let iso_path = Path::new(&cfg.paths.out_dir)
                 .join(format!("{}-{}.iso", &cfg.iso.name, &cfg.iso.version));
-            image::make_iso(Path::new(&cfg.paths.work_dir), &iso_path, &cfg.iso.name)?;
+            image::make_iso(Path::new(&cfg.paths.work_dir), &iso_path, &cfg.iso.name).await?;
 
             // Generate checksum and detached GPG signature
             sign::sha512_sum_to_file(&iso_path)?;
