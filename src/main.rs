@@ -25,34 +25,57 @@ async fn main() -> Result<(), ArchisoError> {
     match cli.mode {
         BuildMode::Iso => {
             info!("Preparing work and output directories");
-            fs::prepare(&cfg.paths)?;
+            if let Err(e) = fs::prepare(&cfg.paths) {
+                error!("Failed to prepare directories: {}", e);
+                return Err(e);
+            }
             info!("Copying airootfs");
-            fs::copy_airootfs(&cfg.paths)?;
-            fs::copy_grub_cfg(&cfg.paths)?;
+            if let Err(e) = fs::copy_airootfs(&cfg.paths) {
+                error!("Failed to copy airootfs: {}", e);
+                return Err(e);
+            }
+            if let Err(e) = fs::copy_grub_cfg(&cfg.paths) {
+                error!("Failed to copy grub.cfg: {}", e);
+                return Err(e);
+            }
 
             info!("Installing official packages via pacstrap");
-            pacman::install_official(&cfg.pacman, &cfg.paths, Path::new(&cfg.paths.work_dir))
-                .await?;
+            if let Err(e) = pacman::install_official(&cfg.pacman, &cfg.paths, Path::new(&cfg.paths.work_dir)).await {
+                error!("Failed to install official packages: {}", e);
+                return Err(e);
+            }
 
             // Create SquashFS image
             info!("Creating SquashFS image");
             let rootfs = Path::new(&cfg.paths.work_dir).join("airootfs");
             let sfs = Path::new(&cfg.paths.work_dir).join("airootfs.sfs");
-            image::squash(&rootfs, &sfs).await?;
+            if let Err(e) = image::squash(&rootfs, &sfs).await {
+                error!("Failed to create SquashFS image: {}", e);
+                return Err(e);
+            }
 
             info!("Creating ISO");
             let iso_path = Path::new(&cfg.paths.out_dir)
                 .join(format!("{}-{}.iso", &cfg.iso.name, &cfg.iso.version));
-            image::make_iso(Path::new(&cfg.paths.work_dir), &iso_path, &cfg.iso.name).await?;
+            if let Err(e) = image::make_iso(Path::new(&cfg.paths.work_dir), &iso_path, &cfg.iso.name).await {
+                error!("Failed to create ISO: {}", e);
+                return Err(e);
+            }
 
             info!("Generating checksum and detached GPG signature");
-            sign::sha512_sum_to_file(&iso_path)?;
+            if let Err(e) = sign::sha512_sum_to_file(&iso_path) {
+                error!("Failed to generate checksum: {}", e);
+                return Err(e);
+            }
             let keyfile = cfg
                 .sign
                 .gpg_key
                 .as_deref()
                 .ok_or_else(|| ArchisoError::Process("gpg_key が設定されていません".into()))?;
-            sign::sign_detached(&iso_path, keyfile)?;
+            if let Err(e) = sign::sign_detached(&iso_path, keyfile) {
+                error!("Failed to generate detached GPG signature: {}", e);
+                return Err(e);
+            }
 
             info!("ISO generated: {}", iso_path.display());
         }
