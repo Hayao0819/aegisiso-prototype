@@ -26,7 +26,7 @@ async fn main() -> Result<(), ArchisoError> {
             fs::copy_airootfs(&cfg.paths)?;
 
             // // Install official packages via pacstrap
-            pacman::install_official(&cfg.pacman, Path::new(&cfg.paths.work_dir)).await?;
+            pacman::install_official(&cfg.pacman, &cfg.paths, Path::new(&cfg.paths.work_dir)).await?;
 
             // // Generate GRUB configuration
             let grub_cfg = template::render_grub(&cfg.iso)?;
