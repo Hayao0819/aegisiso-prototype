@@ -5,7 +5,6 @@ mod fs;
 mod image;
 mod pacman;
 mod sign;
-mod template;
 mod utils;
 
 use crate::cli::{BuildMode, Cli};
@@ -29,14 +28,11 @@ async fn main() -> Result<(), ArchisoError> {
             fs::prepare(&cfg.paths)?;
             info!("Copying airootfs");
             fs::copy_airootfs(&cfg.paths)?;
+            fs::copy_grub_cfg(&cfg.paths)?;
 
             info!("Installing official packages via pacstrap");
             pacman::install_official(&cfg.pacman, &cfg.paths, Path::new(&cfg.paths.work_dir))
                 .await?;
-
-            // // Generate GRUB configuration
-            let grub_cfg = template::render_grub(&cfg.iso)?;
-            fs::write_grub_cfg(&cfg.paths, &grub_cfg)?;
 
             // Create SquashFS image
             info!("Creating SquashFS image");
